@@ -311,5 +311,5 @@ server:
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/onyxirc/issues
-- Documentation: /docs
+- GitHub Issues: https://github.com/Jeyor1337/issues
+- Documentation: https://github.com/Jeyor1337/OnyxIRC
