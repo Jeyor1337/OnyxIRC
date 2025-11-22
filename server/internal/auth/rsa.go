@@ -3,6 +3,7 @@ package auth
 import (
     "crypto/rand"
     "crypto/rsa"
+    "crypto/sha256"
     "crypto/x509"
     "encoding/pem"
     "fmt"
