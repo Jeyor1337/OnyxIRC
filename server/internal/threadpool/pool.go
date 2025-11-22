@@ -8,14 +8,12 @@ import (
     "time"
 )
 
-// Job represents a task to be executed
 type Job struct {
     ID       string
     Task     func() error
-    Priority int // Higher priority jobs are executed first
+    Priority int 
 }
 
-// WorkerPool manages a pool of workers
 type WorkerPool struct {
     workers       int
     maxWorkers    int
@@ -29,7 +27,6 @@ type WorkerPool struct {
     cancel        context.CancelFunc
 }
 
-// NewWorkerPool creates a new worker pool
 func NewWorkerPool(workers, queueSize, maxWorkers int, workerTimeout time.Duration) *WorkerPool {
     ctx, cancel := context.WithCancel(context.Background())
 
@@ -47,17 +44,14 @@ func NewWorkerPool(workers, queueSize, maxWorkers int, workerTimeout time.Durati
     return wp
 }
 
-// Start starts the worker pool
 func (wp *WorkerPool) Start() {
     log.Printf("Starting worker pool with %d workers (max: %d, queue: %d)", wp.workers, wp.maxWorkers, wp.queueSize)
 
-    // Start initial workers
     for i := 0; i < wp.workers; i++ {
         wp.startWorker(i)
     }
 }
 
-// startWorker starts a single worker
 func (wp *WorkerPool) startWorker(id int) {
     wp.workersMu.Lock()
     wp.activeWorkers++
@@ -86,7 +80,7 @@ func (wp *WorkerPool) startWorker(id int) {
                 return
 
             case job := <-wp.jobQueue:
-                // Reset idle timer when we get a job
+                
                 if !idleTimer.Stop() {
                     select {
                     case <-idleTimer.C:
@@ -95,7 +89,6 @@ func (wp *WorkerPool) startWorker(id int) {
                 }
                 idleTimer.Reset(wp.workerTimeout)
 
-                // Execute job
                 if err := job.Task(); err != nil {
                     log.Printf("Worker %d: Job %s failed: %v", workerID, job.ID, err)
                 } else {
@@ -103,9 +96,9 @@ func (wp *WorkerPool) startWorker(id int) {
                 }
 
             case <-idleTimer.C:
-                // Worker has been idle for too long
+                
                 wp.workersMu.Lock()
-                // Only kill worker if we have more than the minimum
+                
                 if wp.activeWorkers > wp.workers {
                     wp.workersMu.Unlock()
                     log.Printf("Worker %d idle timeout, shutting down", workerID)
@@ -113,14 +106,12 @@ func (wp *WorkerPool) startWorker(id int) {
                 }
                 wp.workersMu.Unlock()
 
-                // Reset timer
                 idleTimer.Reset(wp.workerTimeout)
             }
         }
     }(id)
 }
 
-// Submit submits a job to the worker pool
 func (wp *WorkerPool) Submit(job Job) error {
     select {
     case <-wp.ctx.Done():
@@ -128,9 +119,8 @@ func (wp *WorkerPool) Submit(job Job) error {
     default:
     }
 
-    // Check queue size and spawn more workers if needed
     queueLen := len(wp.jobQueue)
-    if queueLen > wp.queueSize/2 { // Queue is more than 50% full
+    if queueLen > wp.queueSize/2 { 
         wp.workersMu.Lock()
         if wp.activeWorkers < wp.maxWorkers {
             newWorkerID := wp.activeWorkers
@@ -142,7 +132,6 @@ func (wp *WorkerPool) Submit(job Job) error {
         }
     }
 
-    // Submit job to queue
     select {
     case wp.jobQueue <- job:
         return nil
@@ -151,7 +140,6 @@ func (wp *WorkerPool) Submit(job Job) error {
     }
 }
 
-// SubmitTask is a convenience method to submit a task without creating a Job
 func (wp *WorkerPool) SubmitTask(id string, task func() error) error {
     return wp.Submit(Job{
         ID:       id,
@@ -160,17 +148,13 @@ func (wp *WorkerPool) SubmitTask(id string, task func() error) error {
     })
 }
 
-// Shutdown gracefully shuts down the worker pool
 func (wp *WorkerPool) Shutdown() {
     log.Println("Shutting down worker pool...")
 
-    // Signal workers to stop
     wp.cancel()
 
-    // Close job queue
     close(wp.jobQueue)
 
-    // Wait for all workers to finish (with timeout)
     done := make(chan struct{})
     go func() {
         wp.wg.Wait()
@@ -185,7 +169,6 @@ func (wp *WorkerPool) Shutdown() {
     }
 }
 
-// GetStats returns worker pool statistics
 func (wp *WorkerPool) GetStats() map[string]interface{} {
     wp.workersMu.Lock()
     defer wp.workersMu.Unlock()
@@ -200,14 +183,12 @@ func (wp *WorkerPool) GetStats() map[string]interface{} {
     }
 }
 
-// GetActiveWorkerCount returns the number of active workers
 func (wp *WorkerPool) GetActiveWorkerCount() int {
     wp.workersMu.Lock()
     defer wp.workersMu.Unlock()
     return wp.activeWorkers
 }
 
-// GetQueueLength returns the current queue length
 func (wp *WorkerPool) GetQueueLength() int {
     return len(wp.jobQueue)
 }

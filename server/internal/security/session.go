@@ -11,27 +11,24 @@ import (
     "github.com/onyxirc/server/internal/models"
 )
 
-// Session represents an active user session
 type Session struct {
     SessionID    string
     UserID       int64
     User         *models.User
     IPAddress    string
-    SessionKey   []byte // AES session key for encryption
+    SessionKey   []byte 
     CreatedAt    time.Time
     LastActivity time.Time
     ExpiresAt    time.Time
 }
 
-// SessionManager manages user sessions
 type SessionManager struct {
-    sessions       map[string]*Session // sessionID -> Session
-    userSessions   map[int64][]string  // userID -> []sessionID
+    sessions       map[string]*Session 
+    userSessions   map[int64][]string  
     mu             sync.RWMutex
     sessionTimeout time.Duration
 }
 
-// NewSessionManager creates a new SessionManager
 func NewSessionManager(sessionTimeout time.Duration) *SessionManager {
     sm := &SessionManager{
         sessions:       make(map[string]*Session),
@@ -39,24 +36,20 @@ func NewSessionManager(sessionTimeout time.Duration) *SessionManager {
         sessionTimeout: sessionTimeout,
     }
 
-    // Start cleanup goroutine
     go sm.cleanupExpiredSessions()
 
     return sm
 }
 
-// CreateSession creates a new session for a user
 func (sm *SessionManager) CreateSession(user *models.User, ipAddress string, sessionKey []byte) (*Session, error) {
     sm.mu.Lock()
     defer sm.mu.Unlock()
 
-    // Generate session ID
     sessionID, err := generateSessionID()
     if err != nil {
         return nil, fmt.Errorf("failed to generate session ID: %w", err)
     }
 
-    // Create session
     now := time.Now()
     session := &Session{
         SessionID:    sessionID,
@@ -69,10 +62,8 @@ func (sm *SessionManager) CreateSession(user *models.User, ipAddress string, ses
         ExpiresAt:    now.Add(sm.sessionTimeout),
     }
 
-    // Store session
     sm.sessions[sessionID] = session
 
-    // Track user sessions
     if _, exists := sm.userSessions[user.UserID]; !exists {
         sm.userSessions[user.UserID] = []string{}
     }
@@ -81,7 +72,6 @@ func (sm *SessionManager) CreateSession(user *models.User, ipAddress string, ses
     return session, nil
 }
 
-// GetSession retrieves a session by ID
 func (sm *SessionManager) GetSession(sessionID string) (*Session, error) {
     sm.mu.RLock()
     defer sm.mu.RUnlock()
@@ -91,7 +81,6 @@ func (sm *SessionManager) GetSession(sessionID string) (*Session, error) {
         return nil, fmt.Errorf("session not found")
     }
 
-    // Check if session is expired
     if time.Now().After(session.ExpiresAt) {
         return nil, fmt.Errorf("session expired")
     }
@@ -99,7 +88,6 @@ func (sm *SessionManager) GetSession(sessionID string) (*Session, error) {
     return session, nil
 }
 
-// UpdateActivity updates the last activity time for a session
 func (sm *SessionManager) UpdateActivity(sessionID string) error {
     sm.mu.Lock()
     defer sm.mu.Unlock()
@@ -116,7 +104,6 @@ func (sm *SessionManager) UpdateActivity(sessionID string) error {
     return nil
 }
 
-// DestroySession destroys a session
 func (sm *SessionManager) DestroySession(sessionID string) error {
     sm.mu.Lock()
     defer sm.mu.Unlock()
@@ -126,10 +113,8 @@ func (sm *SessionManager) DestroySession(sessionID string) error {
         return fmt.Errorf("session not found")
     }
 
-    // Remove from sessions map
     delete(sm.sessions, sessionID)
 
-    // Remove from user sessions
     userSessions := sm.userSessions[session.UserID]
     for i, sid := range userSessions {
         if sid == sessionID {
@@ -138,7 +123,6 @@ func (sm *SessionManager) DestroySession(sessionID string) error {
         }
     }
 
-    // Clean up empty user session list
     if len(sm.userSessions[session.UserID]) == 0 {
         delete(sm.userSessions, session.UserID)
     }
@@ -146,28 +130,24 @@ func (sm *SessionManager) DestroySession(sessionID string) error {
     return nil
 }
 
-// DestroyUserSessions destroys all sessions for a user
 func (sm *SessionManager) DestroyUserSessions(userID int64) error {
     sm.mu.Lock()
     defer sm.mu.Unlock()
 
     sessionIDs, exists := sm.userSessions[userID]
     if !exists {
-        return nil // No sessions to destroy
+        return nil 
     }
 
-    // Remove all sessions
     for _, sessionID := range sessionIDs {
         delete(sm.sessions, sessionID)
     }
 
-    // Remove user sessions entry
     delete(sm.userSessions, userID)
 
     return nil
 }
 
-// GetUserSessions retrieves all active sessions for a user
 func (sm *SessionManager) GetUserSessions(userID int64) []*Session {
     sm.mu.RLock()
     defer sm.mu.RUnlock()
@@ -187,7 +167,6 @@ func (sm *SessionManager) GetUserSessions(userID int64) []*Session {
     return sessions
 }
 
-// GetActiveSessionCount returns the number of active sessions
 func (sm *SessionManager) GetActiveSessionCount() int {
     sm.mu.RLock()
     defer sm.mu.RUnlock()
@@ -195,7 +174,6 @@ func (sm *SessionManager) GetActiveSessionCount() int {
     return len(sm.sessions)
 }
 
-// cleanupExpiredSessions periodically removes expired sessions
 func (sm *SessionManager) cleanupExpiredSessions() {
     ticker := time.NewTicker(1 * time.Minute)
     defer ticker.Stop()
@@ -206,19 +184,16 @@ func (sm *SessionManager) cleanupExpiredSessions() {
         now := time.Now()
         expiredSessions := []string{}
 
-        // Find expired sessions
         for sessionID, session := range sm.sessions {
             if now.After(session.ExpiresAt) {
                 expiredSessions = append(expiredSessions, sessionID)
             }
         }
 
-        // Remove expired sessions
         for _, sessionID := range expiredSessions {
             session := sm.sessions[sessionID]
             delete(sm.sessions, sessionID)
 
-            // Remove from user sessions
             userSessions := sm.userSessions[session.UserID]
             for i, sid := range userSessions {
                 if sid == sessionID {
@@ -227,7 +202,6 @@ func (sm *SessionManager) cleanupExpiredSessions() {
                 }
             }
 
-            // Clean up empty user session list
             if len(sm.userSessions[session.UserID]) == 0 {
                 delete(sm.userSessions, session.UserID)
             }
@@ -241,16 +215,14 @@ func (sm *SessionManager) cleanupExpiredSessions() {
     }
 }
 
-// generateSessionID generates a random session ID
 func generateSessionID() (string, error) {
-    bytes := make([]byte, 32) // 256 bits
+    bytes := make([]byte, 32) 
     if _, err := rand.Read(bytes); err != nil {
         return "", err
     }
     return hex.EncodeToString(bytes), nil
 }
 
-// GetSessionHash returns a SHA-256 hash of the session ID for storage
 func GetSessionHash(sessionID string) string {
     return auth.HashSHA256(sessionID)
 }

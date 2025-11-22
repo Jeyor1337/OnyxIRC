@@ -8,17 +8,14 @@ import (
     "github.com/onyxirc/server/internal/models"
 )
 
-// UserRepository handles user-related database operations
 type UserRepository struct {
     db *DB
 }
 
-// NewUserRepository creates a new UserRepository
 func NewUserRepository(db *DB) *UserRepository {
     return &UserRepository{db: db}
 }
 
-// Create creates a new user
 func (r *UserRepository) Create(username, passwordHash, passwordSalt string) (*models.User, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -41,7 +38,6 @@ func (r *UserRepository) Create(username, passwordHash, passwordSalt string) (*m
     return r.GetByID(userID)
 }
 
-// GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(userID int64) (*models.User, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -76,7 +72,6 @@ func (r *UserRepository) GetByID(userID int64) (*models.User, error) {
     return user, nil
 }
 
-// GetByUsername retrieves a user by username
 func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -111,7 +106,6 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
     return user, nil
 }
 
-// UpdateLastLogin updates the user's last login time
 func (r *UserRepository) UpdateLastLogin(userID int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -125,7 +119,6 @@ func (r *UserRepository) UpdateLastLogin(userID int64) error {
     return nil
 }
 
-// SetAdminStatus sets the admin status for a user
 func (r *UserRepository) SetAdminStatus(userID int64, isAdmin bool) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -139,7 +132,6 @@ func (r *UserRepository) SetAdminStatus(userID int64, isAdmin bool) error {
     return nil
 }
 
-// SetActiveStatus sets the active status for a user
 func (r *UserRepository) SetActiveStatus(userID int64, isActive bool) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -153,7 +145,6 @@ func (r *UserRepository) SetActiveStatus(userID int64, isActive bool) error {
     return nil
 }
 
-// List retrieves all users with pagination
 func (r *UserRepository) List(limit, offset int) ([]*models.User, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -195,12 +186,10 @@ func (r *UserRepository) List(limit, offset int) ([]*models.User, error) {
     return users, nil
 }
 
-// Delete deletes a user (soft delete by setting inactive)
 func (r *UserRepository) Delete(userID int64) error {
     return r.SetActiveStatus(userID, false)
 }
 
-// UsernameExists checks if a username already exists
 func (r *UserRepository) UsernameExists(username string) (bool, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()

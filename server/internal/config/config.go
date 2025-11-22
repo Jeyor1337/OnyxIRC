@@ -8,7 +8,6 @@ import (
     "gopkg.in/yaml.v3"
 )
 
-// Config represents the complete server configuration
 type Config struct {
     Server     ServerConfig     `yaml:"server"`
     Database   DatabaseConfig   `yaml:"database"`
@@ -18,7 +17,6 @@ type Config struct {
     Features   FeaturesConfig   `yaml:"features"`
 }
 
-// ServerConfig contains main server settings
 type ServerConfig struct {
     Host           string        `yaml:"host"`
     Port           int           `yaml:"port"`
@@ -29,7 +27,6 @@ type ServerConfig struct {
     MOTD           string        `yaml:"motd"`
 }
 
-// DatabaseConfig contains database connection settings
 type DatabaseConfig struct {
     Host            string        `yaml:"host"`
     Port            int           `yaml:"port"`
@@ -41,7 +38,6 @@ type DatabaseConfig struct {
     ConnMaxLifetime time.Duration `yaml:"conn_max_lifetime"`
 }
 
-// SecurityConfig contains security settings
 type SecurityConfig struct {
     RSAKeySize             int    `yaml:"rsa_key_size"`
     RSAPrivateKeyPath      string `yaml:"rsa_private_key_path"`
@@ -57,7 +53,6 @@ type SecurityConfig struct {
     LoginAttemptWindow     int    `yaml:"login_attempt_window"`
 }
 
-// ThreadPoolConfig contains thread pool settings
 type ThreadPoolConfig struct {
     WorkerCount       int           `yaml:"worker_count"`
     QueueSize         int           `yaml:"queue_size"`
@@ -65,7 +60,6 @@ type ThreadPoolConfig struct {
     WorkerIdleTimeout time.Duration `yaml:"worker_idle_timeout"`
 }
 
-// LoggingConfig contains logging settings
 type LoggingConfig struct {
     Level         string `yaml:"level"`
     Output        string `yaml:"output"`
@@ -76,7 +70,6 @@ type LoggingConfig struct {
     ConsoleOutput bool   `yaml:"console_output"`
 }
 
-// FeaturesConfig contains feature flags
 type FeaturesConfig struct {
     EnableMessageHistory  bool `yaml:"enable_message_history"`
     MaxMessageHistory     int  `yaml:"max_message_history"`
@@ -86,7 +79,6 @@ type FeaturesConfig struct {
     MaxChannelsPerUser    int  `yaml:"max_channels_per_user"`
 }
 
-// Load reads and parses the configuration file
 func Load(path string) (*Config, error) {
     data, err := os.ReadFile(path)
     if err != nil {
@@ -98,10 +90,8 @@ func Load(path string) (*Config, error) {
         return nil, fmt.Errorf("failed to parse config file: %w", err)
     }
 
-    // Expand environment variables in sensitive fields
     cfg.Database.Password = os.ExpandEnv(cfg.Database.Password)
 
-    // Validate configuration
     if err := cfg.Validate(); err != nil {
         return nil, fmt.Errorf("invalid configuration: %w", err)
     }
@@ -109,7 +99,6 @@ func Load(path string) (*Config, error) {
     return &cfg, nil
 }
 
-// Validate checks if the configuration is valid
 func (c *Config) Validate() error {
     if c.Server.Port < 1 || c.Server.Port > 65535 {
         return fmt.Errorf("invalid server port: %d", c.Server.Port)

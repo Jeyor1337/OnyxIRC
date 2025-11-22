@@ -13,7 +13,6 @@ import (
     "github.com/onyxirc/server/internal/security"
 )
 
-// Client represents a connected client
 type Client struct {
     conn         net.Conn
     server       *Server
@@ -21,7 +20,7 @@ type Client struct {
     SessionID    string
     user         *models.User
     authenticated bool
-    sessionKey   []byte // AES session key
+    sessionKey   []byte 
     channels     []int64
     channelsMu   sync.RWMutex
     writer       *bufio.Writer
@@ -30,7 +29,6 @@ type Client struct {
     once         sync.Once
 }
 
-// NewClient creates a new client
 func NewClient(conn net.Conn, server *Server) *Client {
     return &Client{
         conn:          conn,
@@ -42,17 +40,13 @@ func NewClient(conn net.Conn, server *Server) *Client {
     }
 }
 
-// Handle handles the client connection
 func (c *Client) Handle() {
     defer c.Disconnect()
 
-    // Set read deadline
     c.conn.SetReadDeadline(time.Now().Add(c.server.config.Server.ReadTimeout))
 
-    // Send welcome message
     c.Send(fmt.Sprintf(":%s NOTICE * :Welcome to %s", c.server.config.Server.ServerName, c.server.config.Server.ServerName))
 
-    // Send public key to client
     publicKeyPEM, err := c.server.cryptoManager.GetPublicKeyPEM()
     if err != nil {
         log.Printf("Failed to get public key: %v", err)
@@ -60,7 +54,6 @@ func (c *Client) Handle() {
     }
     c.Send(fmt.Sprintf("PUBKEY :%s", string(publicKeyPEM)))
 
-    // Read and process commands
     scanner := bufio.NewScanner(c.conn)
     for scanner.Scan() {
         line := scanner.Text()
@@ -70,15 +63,12 @@ func (c *Client) Handle() {
             continue
         }
 
-        // Reset read deadline
         c.conn.SetReadDeadline(time.Now().Add(c.server.config.Server.ReadTimeout))
 
-        // Process command
         if err := c.processCommand(line); err != nil {
             log.Printf("Error processing command: %v", err)
             c.Send(fmt.Sprintf("ERROR :%v", err))
 
-            // Disconnect on critical errors
             if strings.Contains(err.Error(), "account locked") {
                 return
             }
@@ -90,7 +80,6 @@ func (c *Client) Handle() {
     }
 }
 
-// processCommand processes a command from the client
 func (c *Client) processCommand(line string) error {
     parts := strings.Fields(line)
     if len(parts) == 0 {
@@ -117,7 +106,7 @@ func (c *Client) processCommand(line string) error {
     case "PING":
         return c.handlePing(parts)
     case "PONG":
-        return nil // Ignore PONG
+        return nil 
     case "ADMIN":
         return c.handleAdminCommand(parts)
     default:
@@ -125,7 +114,6 @@ func (c *Client) processCommand(line string) error {
     }
 }
 
-// Send sends a message to the client
 func (c *Client) Send(message string) {
     c.writerMu.Lock()
     defer c.writerMu.Unlock()
@@ -140,35 +128,30 @@ func (c *Client) Send(message string) {
     }
 }
 
-// Disconnect disconnects the client
 func (c *Client) Disconnect() {
     c.once.Do(func() {
         close(c.disconnect)
 
         if c.authenticated && c.SessionID != "" {
-            // Remove from server
+            
             c.server.RemoveClient(c.SessionID)
 
-            // Destroy session
             c.server.sessionManager.DestroySession(c.SessionID)
         }
 
-        // Close connection
         c.conn.Close()
     })
 }
 
-// GetIPAddress returns the client's IP address
 func (c *Client) GetIPAddress() string {
     addr := c.conn.RemoteAddr().String()
-    // Extract IP without port
+    
     if idx := strings.LastIndex(addr, ":"); idx != -1 {
         return addr[:idx]
     }
     return addr
 }
 
-// requireAuth checks if the client is authenticated
 func (c *Client) requireAuth() error {
     if !c.authenticated {
         return fmt.Errorf("not authenticated")
@@ -176,12 +159,10 @@ func (c *Client) requireAuth() error {
     return nil
 }
 
-// JoinChannel adds the client to a channel
 func (c *Client) JoinChannel(channelID int64) {
     c.channelsMu.Lock()
     defer c.channelsMu.Unlock()
 
-    // Check if already in channel
     for _, cid := range c.channels {
         if cid == channelID {
             return
@@ -191,7 +172,6 @@ func (c *Client) JoinChannel(channelID int64) {
     c.channels = append(c.channels, channelID)
 }
 
-// LeaveChannel removes the client from a channel
 func (c *Client) LeaveChannel(channelID int64) {
     c.channelsMu.Lock()
     defer c.channelsMu.Unlock()
@@ -204,7 +184,6 @@ func (c *Client) LeaveChannel(channelID int64) {
     }
 }
 
-// IsInChannel checks if the client is in a channel
 func (c *Client) IsInChannel(channelID int64) bool {
     c.channelsMu.RLock()
     defer c.channelsMu.RUnlock()

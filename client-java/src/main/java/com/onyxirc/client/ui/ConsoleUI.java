@@ -16,9 +16,6 @@ import java.security.PublicKey;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * Console-based user interface
- */
 public class ConsoleUI implements MessageHandler {
     private static final Logger logger = LoggerFactory.getLogger(ConsoleUI.class);
 
@@ -37,14 +34,12 @@ public class ConsoleUI implements MessageHandler {
     public void start() {
         printBanner();
 
-        // Create connection
         connection = new Connection(config, this);
 
         try {
             connection.connect();
             onConnected();
 
-            // Start input loop
             runInputLoop();
 
         } catch (IOException e) {
@@ -95,7 +90,7 @@ public class ConsoleUI implements MessageHandler {
                 break;
 
             default:
-                // Display the message
+                
                 println(message);
                 break;
         }

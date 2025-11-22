@@ -8,8 +8,6 @@ import (
     "github.com/onyxirc/server/internal/admin"
 )
 
-// handleAdminCommand handles admin commands
-// Format: ADMIN <subcommand> <args...>
 func (c *Client) handleAdminCommand(parts []string) error {
     if err := c.requireAuth(); err != nil {
         return err
@@ -45,8 +43,6 @@ func (c *Client) handleAdminCommand(parts []string) error {
     }
 }
 
-// handleAdminKick kicks a user
-// Format: ADMIN kick <username> <reason>
 func (c *Client) handleAdminKick(args []string) error {
     if len(args) < 2 {
         return fmt.Errorf("usage: ADMIN kick <username> <reason>")
@@ -59,7 +55,6 @@ func (c *Client) handleAdminKick(args []string) error {
         return err
     }
 
-    // Find and disconnect the user
     c.server.clientsMu.RLock()
     for _, client := range c.server.clients {
         if client.user != nil && client.user.Username == username {
@@ -76,8 +71,6 @@ func (c *Client) handleAdminKick(args []string) error {
     return nil
 }
 
-// handleAdminBan bans a user
-// Format: ADMIN ban <username> <duration> <reason>
 func (c *Client) handleAdminBan(args []string) error {
     if len(args) < 3 {
         return fmt.Errorf("usage: ADMIN ban <username> <duration_seconds> <reason>")
@@ -96,7 +89,6 @@ func (c *Client) handleAdminBan(args []string) error {
         return err
     }
 
-    // Find and disconnect the user
     c.server.clientsMu.RLock()
     for _, client := range c.server.clients {
         if client.user != nil && client.user.Username == username {
@@ -118,8 +110,6 @@ func (c *Client) handleAdminBan(args []string) error {
     return nil
 }
 
-// handleAdminUnban unbans a user
-// Format: ADMIN unban <username>
 func (c *Client) handleAdminUnban(args []string) error {
     if len(args) < 1 {
         return fmt.Errorf("usage: ADMIN unban <username>")
@@ -137,8 +127,6 @@ func (c *Client) handleAdminUnban(args []string) error {
     return nil
 }
 
-// handleAdminUnlock unlocks a user account
-// Format: ADMIN unlock <username>
 func (c *Client) handleAdminUnlock(args []string) error {
     if len(args) < 1 {
         return fmt.Errorf("usage: ADMIN unlock <username>")
@@ -156,8 +144,6 @@ func (c *Client) handleAdminUnlock(args []string) error {
     return nil
 }
 
-// handleAdminMakeAdmin grants admin privileges
-// Format: ADMIN makeadmin <username>
 func (c *Client) handleAdminMakeAdmin(args []string) error {
     if len(args) < 1 {
         return fmt.Errorf("usage: ADMIN makeadmin <username>")
@@ -165,7 +151,6 @@ func (c *Client) handleAdminMakeAdmin(args []string) error {
 
     username := args[0]
 
-    // Get target user
     targetUser, err := c.server.authService.GetUserByUsername(username)
     if err != nil {
         return fmt.Errorf("user not found: %w", err)
@@ -181,8 +166,6 @@ func (c *Client) handleAdminMakeAdmin(args []string) error {
     return nil
 }
 
-// handleAdminRemoveAdmin revokes admin privileges
-// Format: ADMIN removeadmin <username>
 func (c *Client) handleAdminRemoveAdmin(args []string) error {
     if len(args) < 1 {
         return fmt.Errorf("usage: ADMIN removeadmin <username>")
@@ -190,7 +173,6 @@ func (c *Client) handleAdminRemoveAdmin(args []string) error {
 
     username := args[0]
 
-    // Get target user
     targetUser, err := c.server.authService.GetUserByUsername(username)
     if err != nil {
         return fmt.Errorf("user not found: %w", err)
@@ -206,8 +188,6 @@ func (c *Client) handleAdminRemoveAdmin(args []string) error {
     return nil
 }
 
-// handleAdminBroadcast broadcasts a message to all users
-// Format: ADMIN broadcast <message>
 func (c *Client) handleAdminBroadcast(args []string) error {
     if len(args) < 1 {
         return fmt.Errorf("usage: ADMIN broadcast <message>")
@@ -219,7 +199,6 @@ func (c *Client) handleAdminBroadcast(args []string) error {
         return err
     }
 
-    // Broadcast to all connected clients
     broadcastMsg := fmt.Sprintf(":%s NOTICE * :[BROADCAST] %s", c.server.config.Server.ServerName, message)
 
     c.server.clientsMu.RLock()
@@ -233,8 +212,6 @@ func (c *Client) handleAdminBroadcast(args []string) error {
     return nil
 }
 
-// handleAdminStats shows server statistics
-// Format: ADMIN stats
 func (c *Client) handleAdminStats(args []string) error {
     stats, err := c.server.adminService.GetServerStats(c.user.UserID)
     if err != nil {
@@ -247,15 +224,12 @@ func (c *Client) handleAdminStats(args []string) error {
         c.Send(fmt.Sprintf(":%s NOTICE %s :%s: %v", c.server.config.Server.ServerName, c.user.Username, key, value))
     }
 
-    // Add runtime stats
     c.Send(fmt.Sprintf(":%s NOTICE %s :active_connections: %d", c.server.config.Server.ServerName, c.user.Username, c.server.GetActiveClientCount()))
     c.Send(fmt.Sprintf(":%s NOTICE %s :active_sessions: %d", c.server.config.Server.ServerName, c.user.Username, c.server.sessionManager.GetActiveSessionCount()))
 
     return nil
 }
 
-// handleAdminLog shows admin action log
-// Format: ADMIN log [limit]
 func (c *Client) handleAdminLog(args []string) error {
     limit := 10
     if len(args) > 0 {

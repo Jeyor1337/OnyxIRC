@@ -2,12 +2,11 @@ package models
 
 import "time"
 
-// User represents a user account
 type User struct {
     UserID       int64     `json:"user_id"`
     Username     string    `json:"username"`
-    PasswordHash string    `json:"-"` // Never serialize password hash
-    PasswordSalt string    `json:"-"` // Never serialize salt
+    PasswordHash string    `json:"-"` 
+    PasswordSalt string    `json:"-"` 
     CreatedAt    time.Time `json:"created_at"`
     UpdatedAt    time.Time `json:"updated_at"`
     IsActive     bool      `json:"is_active"`
@@ -15,7 +14,6 @@ type User struct {
     LastLoginTime *time.Time `json:"last_login_time,omitempty"`
 }
 
-// UserSecurityStatus represents IP tracking and security status
 type UserSecurityStatus struct {
     UserID            int64      `json:"user_id"`
     LastKnownIP       *string    `json:"last_known_ip,omitempty"`
@@ -26,7 +24,6 @@ type UserSecurityStatus struct {
     LockedBy          *int64     `json:"locked_by,omitempty"`
 }
 
-// UserIPTracking represents a login attempt record
 type UserIPTracking struct {
     TrackingID      int64     `json:"tracking_id"`
     UserID          int64     `json:"user_id"`
@@ -36,11 +33,10 @@ type UserIPTracking struct {
     UserAgent       *string   `json:"user_agent,omitempty"`
 }
 
-// SessionToken represents an active session
 type SessionToken struct {
     TokenID      int64     `json:"token_id"`
     UserID       int64     `json:"user_id"`
-    TokenHash    string    `json:"-"` // Never serialize token
+    TokenHash    string    `json:"-"` 
     CreatedAt    time.Time `json:"created_at"`
     ExpiresAt    time.Time `json:"expires_at"`
     LastActivity time.Time `json:"last_activity"`
@@ -48,7 +44,6 @@ type SessionToken struct {
     IsValid      bool      `json:"is_valid"`
 }
 
-// UserBan represents a user ban
 type UserBan struct {
     BanID     int64      `json:"ban_id"`
     UserID    int64      `json:"user_id"`

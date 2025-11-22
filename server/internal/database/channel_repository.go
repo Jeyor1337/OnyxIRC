@@ -7,17 +7,14 @@ import (
     "github.com/onyxirc/server/internal/models"
 )
 
-// ChannelRepository handles channel-related database operations
 type ChannelRepository struct {
     db *DB
 }
 
-// NewChannelRepository creates a new ChannelRepository
 func NewChannelRepository(db *DB) *ChannelRepository {
     return &ChannelRepository{db: db}
 }
 
-// Create creates a new channel
 func (r *ChannelRepository) Create(channelName string, createdBy int64, isPrivate bool) (*models.Channel, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -37,7 +34,6 @@ func (r *ChannelRepository) Create(channelName string, createdBy int64, isPrivat
         return nil, fmt.Errorf("failed to get channel ID: %w", err)
     }
 
-    // Add creator as owner
     if err := r.AddMember(channelID, createdBy, "owner"); err != nil {
         return nil, fmt.Errorf("failed to add creator as owner: %w", err)
     }
@@ -45,7 +41,6 @@ func (r *ChannelRepository) Create(channelName string, createdBy int64, isPrivat
     return r.GetByID(channelID)
 }
 
-// GetByID retrieves a channel by ID
 func (r *ChannelRepository) GetByID(channelID int64) (*models.Channel, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -77,7 +72,6 @@ func (r *ChannelRepository) GetByID(channelID int64) (*models.Channel, error) {
     return channel, nil
 }
 
-// GetByName retrieves a channel by name
 func (r *ChannelRepository) GetByName(channelName string) (*models.Channel, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -109,7 +103,6 @@ func (r *ChannelRepository) GetByName(channelName string) (*models.Channel, erro
     return channel, nil
 }
 
-// List retrieves all public channels
 func (r *ChannelRepository) List() ([]*models.Channel, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -148,7 +141,6 @@ func (r *ChannelRepository) List() ([]*models.Channel, error) {
     return channels, nil
 }
 
-// AddMember adds a user to a channel
 func (r *ChannelRepository) AddMember(channelID, userID int64, role string) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -166,7 +158,6 @@ func (r *ChannelRepository) AddMember(channelID, userID int64, role string) erro
     return nil
 }
 
-// RemoveMember removes a user from a channel
 func (r *ChannelRepository) RemoveMember(channelID, userID int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -180,7 +171,6 @@ func (r *ChannelRepository) RemoveMember(channelID, userID int64) error {
     return nil
 }
 
-// GetMembers retrieves all members of a channel
 func (r *ChannelRepository) GetMembers(channelID int64) ([]*models.ChannelMember, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -218,7 +208,6 @@ func (r *ChannelRepository) GetMembers(channelID int64) ([]*models.ChannelMember
     return members, nil
 }
 
-// IsMember checks if a user is a member of a channel
 func (r *ChannelRepository) IsMember(channelID, userID int64) (bool, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -233,7 +222,6 @@ func (r *ChannelRepository) IsMember(channelID, userID int64) (bool, error) {
     return count > 0, nil
 }
 
-// GetMemberRole retrieves the role of a user in a channel
 func (r *ChannelRepository) GetMemberRole(channelID, userID int64) (string, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -251,7 +239,6 @@ func (r *ChannelRepository) GetMemberRole(channelID, userID int64) (string, erro
     return role, nil
 }
 
-// UpdateTopic updates the channel topic
 func (r *ChannelRepository) UpdateTopic(channelID int64, topic string) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -265,7 +252,6 @@ func (r *ChannelRepository) UpdateTopic(channelID int64, topic string) error {
     return nil
 }
 
-// Delete deletes a channel
 func (r *ChannelRepository) Delete(channelID int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()

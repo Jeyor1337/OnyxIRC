@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-/**
- * Client configuration loader
- */
 public class ClientConfig {
     private final Properties properties;
 

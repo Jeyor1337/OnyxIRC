@@ -5,36 +5,31 @@ import (
     "log"
 )
 
-// Migration represents a database migration
 type Migration struct {
     Version     int
     Description string
     SQL         string
 }
 
-// RunMigrations runs all pending database migrations
 func RunMigrations(db *DB) error {
-    // Create migrations table if it doesn't exist
+    
     if err := createMigrationsTable(db); err != nil {
         return fmt.Errorf("failed to create migrations table: %w", err)
     }
 
-    // Get current version
     currentVersion, err := getCurrentVersion(db)
     if err != nil {
         return fmt.Errorf("failed to get current version: %w", err)
     }
 
-    // Define migrations
     migrations := []Migration{
         {
             Version:     1,
             Description: "Initial schema setup",
-            SQL:         "", // Schema is created manually via schema.sql
+            SQL:         "", 
         },
     }
 
-    // Run pending migrations
     for _, migration := range migrations {
         if migration.Version <= currentVersion {
             continue
@@ -48,7 +43,6 @@ func RunMigrations(db *DB) error {
             }
         }
 
-        // Update version
         if err := updateVersion(db, migration.Version); err != nil {
             return fmt.Errorf("failed to update version: %w", err)
         }
@@ -59,7 +53,6 @@ func RunMigrations(db *DB) error {
     return nil
 }
 
-// createMigrationsTable creates the schema_migrations table
 func createMigrationsTable(db *DB) error {
     query := `
         CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -71,7 +64,6 @@ func createMigrationsTable(db *DB) error {
     return err
 }
 
-// getCurrentVersion gets the current schema version
 func getCurrentVersion(db *DB) (int, error) {
     var version int
     err := db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM schema_migrations").Scan(&version)
@@ -81,7 +73,6 @@ func getCurrentVersion(db *DB) (int, error) {
     return version, nil
 }
 
-// updateVersion updates the schema version
 func updateVersion(db *DB, version int) error {
     _, err := db.Exec("INSERT INTO schema_migrations (version) VALUES (?)", version)
     return err

@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// AdminActionLog represents an admin action for auditing
 type AdminActionLog struct {
     LogID           int64      `json:"log_id"`
     AdminID         int64      `json:"admin_id"`
@@ -13,7 +12,6 @@ type AdminActionLog struct {
     PerformedAt     time.Time  `json:"performed_at"`
 }
 
-// ServerConfig represents a server configuration entry
 type ServerConfig struct {
     ConfigKey   string     `json:"config_key"`
     ConfigValue string     `json:"config_value"`

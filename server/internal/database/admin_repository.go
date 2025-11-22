@@ -8,17 +8,14 @@ import (
     "github.com/onyxirc/server/internal/models"
 )
 
-// AdminRepository handles admin-related database operations
 type AdminRepository struct {
     db *DB
 }
 
-// NewAdminRepository creates a new AdminRepository
 func NewAdminRepository(db *DB) *AdminRepository {
     return &AdminRepository{db: db}
 }
 
-// LogAction logs an admin action
 func (r *AdminRepository) LogAction(adminID int64, actionType string, targetUserID, targetChannelID *int64, details string) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -36,7 +33,6 @@ func (r *AdminRepository) LogAction(adminID int64, actionType string, targetUser
     return nil
 }
 
-// GetAdminActionLog retrieves admin actions with pagination
 func (r *AdminRepository) GetAdminActionLog(limit, offset int) ([]*models.AdminActionLog, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -75,7 +71,6 @@ func (r *AdminRepository) GetAdminActionLog(limit, offset int) ([]*models.AdminA
     return logs, nil
 }
 
-// BanUser creates a user ban
 func (r *AdminRepository) BanUser(userID, bannedBy int64, reason string, duration *time.Duration) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -99,7 +94,6 @@ func (r *AdminRepository) BanUser(userID, bannedBy int64, reason string, duratio
     return nil
 }
 
-// UnbanUser removes active bans for a user
 func (r *AdminRepository) UnbanUser(userID int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -114,7 +108,6 @@ func (r *AdminRepository) UnbanUser(userID int64) error {
     return nil
 }
 
-// IsUserBanned checks if a user is currently banned
 func (r *AdminRepository) IsUserBanned(userID int64) (bool, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -135,7 +128,6 @@ func (r *AdminRepository) IsUserBanned(userID int64) (bool, error) {
     return count > 0, nil
 }
 
-// GetActiveBans retrieves all active bans
 func (r *AdminRepository) GetActiveBans() ([]*models.UserBan, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -174,7 +166,6 @@ func (r *AdminRepository) GetActiveBans() ([]*models.UserBan, error) {
     return bans, nil
 }
 
-// GetServerConfig retrieves a server configuration value
 func (r *AdminRepository) GetServerConfig(key string) (string, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -193,7 +184,6 @@ func (r *AdminRepository) GetServerConfig(key string) (string, error) {
     return value, nil
 }
 
-// SetServerConfig sets a server configuration value
 func (r *AdminRepository) SetServerConfig(key, value, description string, updatedBy *int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()

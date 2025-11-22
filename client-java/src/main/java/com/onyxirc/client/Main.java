@@ -7,9 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-/**
- * OnyxIRC Client Main Entry Point
- */
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
@@ -17,11 +14,10 @@ public class Main {
         logger.info("Starting OnyxIRC Client v1.0.0");
 
         try {
-            // Load client configuration
+            
             ClientConfig config = ClientConfig.load("client.properties");
             logger.info("Configuration loaded successfully");
 
-            // Start console UI
             ConsoleUI ui = new ConsoleUI(config);
             ui.start();
 

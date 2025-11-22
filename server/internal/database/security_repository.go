@@ -8,17 +8,14 @@ import (
     "github.com/onyxirc/server/internal/models"
 )
 
-// SecurityRepository handles security-related database operations
 type SecurityRepository struct {
     db *DB
 }
 
-// NewSecurityRepository creates a new SecurityRepository
 func NewSecurityRepository(db *DB) *SecurityRepository {
     return &SecurityRepository{db: db}
 }
 
-// RecordLoginAttempt records a login attempt with IP address
 func (r *SecurityRepository) RecordLoginAttempt(userID int64, ipAddress string, isSuccessful bool, userAgent *string) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -36,7 +33,6 @@ func (r *SecurityRepository) RecordLoginAttempt(userID int64, ipAddress string, 
     return nil
 }
 
-// GetSecurityStatus retrieves the security status for a user
 func (r *SecurityRepository) GetSecurityStatus(userID int64) (*models.UserSecurityStatus, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -69,7 +65,6 @@ func (r *SecurityRepository) GetSecurityStatus(userID int64) (*models.UserSecuri
     return status, nil
 }
 
-// UpdateLastKnownIP updates the last known IP for a user
 func (r *SecurityRepository) UpdateLastKnownIP(userID int64, ipAddress string) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -88,7 +83,6 @@ func (r *SecurityRepository) UpdateLastKnownIP(userID int64, ipAddress string) e
     return nil
 }
 
-// IncrementSuspicionCount increments the IP suspicion count
 func (r *SecurityRepository) IncrementSuspicionCount(userID int64) (int, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -104,7 +98,6 @@ func (r *SecurityRepository) IncrementSuspicionCount(userID int64) (int, error) 
         return 0, fmt.Errorf("failed to increment suspicion count: %w", err)
     }
 
-    // Get updated count
     status, err := r.GetSecurityStatus(userID)
     if err != nil {
         return 0, err
@@ -113,7 +106,6 @@ func (r *SecurityRepository) IncrementSuspicionCount(userID int64) (int, error) 
     return status.IPSuspicionCount, nil
 }
 
-// ResetSuspicionCount resets the IP suspicion count to zero
 func (r *SecurityRepository) ResetSuspicionCount(userID int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -132,7 +124,6 @@ func (r *SecurityRepository) ResetSuspicionCount(userID int64) error {
     return nil
 }
 
-// LockAccount locks a user account
 func (r *SecurityRepository) LockAccount(userID int64, reason string, lockedBy *int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -154,7 +145,6 @@ func (r *SecurityRepository) LockAccount(userID int64, reason string, lockedBy *
     return nil
 }
 
-// UnlockAccount unlocks a user account
 func (r *SecurityRepository) UnlockAccount(userID int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -177,7 +167,6 @@ func (r *SecurityRepository) UnlockAccount(userID int64) error {
     return nil
 }
 
-// GetLoginHistory retrieves recent login attempts for a user
 func (r *SecurityRepository) GetLoginHistory(userID int64, limit int) ([]*models.UserIPTracking, error) {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -216,7 +205,6 @@ func (r *SecurityRepository) GetLoginHistory(userID int64, limit int) ([]*models
     return history, nil
 }
 
-// IsAccountLocked checks if an account is locked
 func (r *SecurityRepository) IsAccountLocked(userID int64) (bool, error) {
     status, err := r.GetSecurityStatus(userID)
     if err != nil {

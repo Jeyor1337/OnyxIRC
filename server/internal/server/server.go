@@ -14,12 +14,11 @@ import (
     "github.com/onyxirc/server/internal/security"
 )
 
-// Server represents the IRC server
 type Server struct {
     config           *config.Config
     db               *database.DB
     listener         net.Listener
-    clients          map[string]*Client // sessionID -> Client
+    clients          map[string]*Client 
     clientsMu        sync.RWMutex
     authService      *auth.AuthService
     adminService     *admin.AdminService
@@ -30,14 +29,12 @@ type Server struct {
     wg               sync.WaitGroup
 }
 
-// New creates a new IRC server
 func New(cfg *config.Config, db *database.DB) (*Server, error) {
-    // Initialize repositories
+    
     userRepo := database.NewUserRepository(db)
     securityRepo := database.NewSecurityRepository(db)
     adminRepo := database.NewAdminRepository(db)
 
-    // Initialize services
     authService := auth.NewAuthService(
         userRepo,
         securityRepo,
@@ -61,7 +58,6 @@ func New(cfg *config.Config, db *database.DB) (*Server, error) {
         time.Duration(cfg.Security.SessionTimeout) * time.Second,
     )
 
-    // Initialize or load RSA keys
     cryptoManager, err := initializeCrypto(cfg)
     if err != nil {
         return nil, fmt.Errorf("failed to initialize crypto: %w", err)
@@ -80,7 +76,6 @@ func New(cfg *config.Config, db *database.DB) (*Server, error) {
     }, nil
 }
 
-// Start starts the IRC server
 func (s *Server) Start() error {
     address := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
 
@@ -92,7 +87,6 @@ func (s *Server) Start() error {
     s.listener = listener
     log.Printf("Server listening on %s", address)
 
-    // Accept connections
     for {
         select {
         case <-s.shutdown:
@@ -109,29 +103,24 @@ func (s *Server) Start() error {
                 }
             }
 
-            // Handle connection in a goroutine
             s.wg.Add(1)
             go s.handleConnection(conn)
         }
     }
 }
 
-// handleConnection handles a new client connection
 func (s *Server) handleConnection(conn net.Conn) {
     defer s.wg.Done()
 
-    // Create client
     client := NewClient(conn, s)
 
     log.Printf("New connection from %s", conn.RemoteAddr().String())
 
-    // Handle client
     client.Handle()
 
     log.Printf("Connection closed from %s", conn.RemoteAddr().String())
 }
 
-// AddClient adds a client to the server
 func (s *Server) AddClient(client *Client) {
     s.clientsMu.Lock()
     defer s.clientsMu.Unlock()
@@ -139,7 +128,6 @@ func (s *Server) AddClient(client *Client) {
     s.clients[client.SessionID] = client
 }
 
-// RemoveClient removes a client from the server
 func (s *Server) RemoveClient(sessionID string) {
     s.clientsMu.Lock()
     defer s.clientsMu.Unlock()
@@ -147,7 +135,6 @@ func (s *Server) RemoveClient(sessionID string) {
     delete(s.clients, sessionID)
 }
 
-// GetClient retrieves a client by session ID
 func (s *Server) GetClient(sessionID string) (*Client, bool) {
     s.clientsMu.RLock()
     defer s.clientsMu.RUnlock()
@@ -156,7 +143,6 @@ func (s *Server) GetClient(sessionID string) (*Client, bool) {
     return client, exists
 }
 
-// BroadcastToChannel broadcasts a message to all clients in a channel
 func (s *Server) BroadcastToChannel(channelID int64, message string, excludeSessionID string) {
     s.clientsMu.RLock()
     defer s.clientsMu.RUnlock()
@@ -166,7 +152,6 @@ func (s *Server) BroadcastToChannel(channelID int64, message string, excludeSess
             continue
         }
 
-        // Check if client is in the channel
         client.channelsMu.RLock()
         inChannel := false
         for _, cid := range client.channels {
@@ -183,7 +168,6 @@ func (s *Server) BroadcastToChannel(channelID int64, message string, excludeSess
     }
 }
 
-// GetActiveClientCount returns the number of active clients
 func (s *Server) GetActiveClientCount() int {
     s.clientsMu.RLock()
     defer s.clientsMu.RUnlock()
@@ -191,19 +175,15 @@ func (s *Server) GetActiveClientCount() int {
     return len(s.clients)
 }
 
-// Shutdown gracefully shuts down the server
 func (s *Server) Shutdown() error {
     log.Println("Initiating graceful shutdown...")
 
-    // Signal shutdown
     close(s.shutdown)
 
-    // Close listener
     if s.listener != nil {
         s.listener.Close()
     }
 
-    // Disconnect all clients
     s.clientsMu.Lock()
     for _, client := range s.clients {
         client.Send("ERROR :Server shutting down")
@@ -211,7 +191,6 @@ func (s *Server) Shutdown() error {
     }
     s.clientsMu.Unlock()
 
-    // Wait for all goroutines to finish (with timeout)
     done := make(chan struct{})
     go func() {
         s.wg.Wait()
@@ -225,7 +204,6 @@ func (s *Server) Shutdown() error {
         log.Println("Shutdown timeout reached, forcing exit")
     }
 
-    // Close database connection
     if err := s.db.Close(); err != nil {
         log.Printf("Error closing database: %v", err)
     }
@@ -234,21 +212,18 @@ func (s *Server) Shutdown() error {
     return nil
 }
 
-// initializeCrypto initializes or loads RSA keys and creates CryptoManager
 func initializeCrypto(cfg *config.Config) (*auth.CryptoManager, error) {
     var keyPair *auth.RSAKeyPair
 
-    // Try to load existing keys
     privateKey, err := auth.LoadPrivateKeyFromFile(cfg.Security.RSAPrivateKeyPath)
     if err != nil {
-        // Keys don't exist, generate new ones
+        
         log.Printf("Generating new RSA key pair (%d bits)...", cfg.Security.RSAKeySize)
         keyPair, err = auth.GenerateRSAKeyPair(cfg.Security.RSAKeySize)
         if err != nil {
             return nil, fmt.Errorf("failed to generate RSA keys: %w", err)
         }
 
-        // Save keys
         if err := keyPair.SavePrivateKeyToFile(cfg.Security.RSAPrivateKeyPath); err != nil {
             return nil, fmt.Errorf("failed to save private key: %w", err)
         }
@@ -259,7 +234,7 @@ func initializeCrypto(cfg *config.Config) (*auth.CryptoManager, error) {
 
         log.Println("RSA keys generated and saved successfully")
     } else {
-        // Keys loaded successfully
+        
         publicKey, err := auth.LoadPublicKeyFromFile(cfg.Security.RSAPublicKeyPath)
         if err != nil {
             return nil, fmt.Errorf("failed to load public key: %w", err)
@@ -273,7 +248,6 @@ func initializeCrypto(cfg *config.Config) (*auth.CryptoManager, error) {
         log.Println("RSA keys loaded successfully")
     }
 
-    // Create CryptoManager
     cryptoManager := auth.NewCryptoManager(keyPair, cfg.Security.AESMode)
 
     return cryptoManager, nil
