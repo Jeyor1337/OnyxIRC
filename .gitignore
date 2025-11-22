@@ -1,0 +1,70 @@
+# OnyxIRC .gitignore
+
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+server/server
+client-java/target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# Golang
+server/vendor/
+server/*.test
+server/*.out
+server/bin/
+
+# Java
+client-java/target/
+client-java/.classpath
+client-java/.project
+client-java/.settings/
+*.class
+*.jar
+!client-java/lib/*.jar
+
+# Logs
+*.log
+logs/
+server/logs/
+client-java/logs/
+
+# Keys and Certificates (DO NOT COMMIT)
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+server/keys/
+client-java/keys/
+
+# Database
+*.db
+*.sqlite
+*.sql.backup
+
+# Configuration (local overrides)
+server/configs/server.local.yaml
+client-java/src/main/resources/client.local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp

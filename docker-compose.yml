@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: onyxirc-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: onyxirc
+      MYSQL_USER: irc_user
+      MYSQL_PASSWORD: changeme
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - onyxirc-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # OnyxIRC Server
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: onyxirc-server
+    ports:
+      - "6667:6667"
+    environment:
+      - DB_PASSWORD=changeme
+    volumes:
+      - ./server/configs:/root/configs
+      - server_keys:/root/keys
+      - server_logs:/root/logs
+    networks:
+      - onyxirc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Java Client (optional, for testing)
+  client:
+    build:
+      context: ./client-java
+      dockerfile: Dockerfile
+    container_name: onyxirc-client
+    networks:
+      - onyxirc-network
+    depends_on:
+      - server
+    stdin_open: true
+    tty: true
+    profiles:
+      - client
+
+networks:
+  onyxirc-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  server_keys:
+  server_logs:

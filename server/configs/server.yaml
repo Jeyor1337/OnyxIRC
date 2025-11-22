@@ -1,0 +1,64 @@
+# OnyxIRC Server Configuration
+
+server:
+  host: "0.0.0.0"
+  port: 6667
+  max_connections: 1000
+  read_timeout: 30s
+  write_timeout: 30s
+  server_name: "OnyxIRC"
+  motd: "Welcome to OnyxIRC - Secure IRC Server"
+
+database:
+  host: "localhost"
+  port: 3306
+  name: "onyxirc"
+  user: "irc_user"
+  password: "changeme"  # Use environment variable in production: ${DB_PASSWORD}
+  max_open_conns: 100
+  max_idle_conns: 10
+  conn_max_lifetime: 3600s
+
+security:
+  # RSA Configuration
+  rsa_key_size: 2048  # 2048 or 4096
+  rsa_private_key_path: "keys/server_private.pem"
+  rsa_public_key_path: "keys/server_public.pem"
+
+  # AES Configuration
+  aes_key_size: 256  # Must be 256 for AES-256
+  aes_mode: "GCM"  # GCM (recommended) or CBC
+
+  # Authentication & Session
+  session_timeout: 3600  # seconds
+  max_ip_suspicion: 3
+  enable_ip_tracking: true
+  password_min_length: 8
+  password_require_special: true
+
+  # Rate Limiting
+  max_login_attempts: 5
+  login_attempt_window: 300  # seconds
+
+threadpool:
+  worker_count: 10
+  queue_size: 1000
+  max_workers: 100
+  worker_idle_timeout: 60s
+
+logging:
+  level: "info"  # debug, info, warn, error
+  output: "logs/server.log"
+  max_size_mb: 100
+  max_backups: 5
+  max_age_days: 30
+  compress: true
+  console_output: true
+
+features:
+  enable_message_history: true
+  max_message_history: 1000
+  enable_direct_messages: true
+  enable_file_transfer: false  # Future feature
+  max_channel_name_length: 100
+  max_channels_per_user: 50
