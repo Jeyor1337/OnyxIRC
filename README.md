@@ -198,11 +198,11 @@ mvn clean package
 
 ## License
 
-[Add your license here]
+MIT
 
-## Contributing
+## Contribution
 
-[Add contribution guidelines here]
+no one
 
 ## Support
 
