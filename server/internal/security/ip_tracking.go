@@ -58,7 +58,7 @@ func (s *IPTrackingService) CheckIPAndTrack(userID int64, currentIP string) erro
         log.Printf("IP suspicion count for user %d: %d/%d", userID, newCount, s.maxSuspicion)
 
         if newCount > s.maxSuspicion {
-            
+
             reason := fmt.Sprintf("Too many IP address changes (%d)", newCount)
             if err := s.securityRepo.LockAccount(userID, reason, nil); err != nil {
                 return fmt.Errorf("failed to lock account: %w", err)
@@ -70,6 +70,26 @@ func (s *IPTrackingService) CheckIPAndTrack(userID int64, currentIP string) erro
 
         if err := s.securityRepo.UpdateLastKnownIP(userID, currentIP); err != nil {
             log.Printf("Warning: failed to update last known IP: %v", err)
+        }
+    } else {
+        // IP is the same as last known IP
+        // Check if the last 2 successful logins were from the same IP
+        // If so, decrement suspicion count (if > 0)
+        if status.IPSuspicionCount > 0 {
+            recentLogins, err := s.securityRepo.GetRecentSuccessfulLogins(userID, 2)
+            if err != nil {
+                log.Printf("Warning: failed to get recent logins: %v", err)
+            } else if len(recentLogins) >= 2 {
+                // Check if both recent logins are from the same IP (current IP)
+                if recentLogins[0].IPAddress == currentIP && recentLogins[1].IPAddress == currentIP {
+                    newCount, err := s.securityRepo.DecrementSuspicionCount(userID)
+                    if err != nil {
+                        log.Printf("Warning: failed to decrement suspicion count: %v", err)
+                    } else {
+                        log.Printf("IP suspicion count decremented for user %d: %d (consecutive logins from same IP)", userID, newCount)
+                    }
+                }
+            }
         }
     }
 

@@ -124,6 +124,32 @@ func (r *SecurityRepository) ResetSuspicionCount(userID int64) error {
     return nil
 }
 
+func (r *SecurityRepository) DecrementSuspicionCount(userID int64) (int, error) {
+    ctx, cancel := contextWithTimeout(defaultTimeout)
+    defer cancel()
+
+    query := `
+        UPDATE user_security_status
+        SET ip_suspicion_count = CASE
+            WHEN ip_suspicion_count > 0 THEN ip_suspicion_count - 1
+            ELSE 0
+        END
+        WHERE user_id = ?
+    `
+
+    _, err := r.db.ExecContext(ctx, query, userID)
+    if err != nil {
+        return 0, fmt.Errorf("failed to decrement suspicion count: %w", err)
+    }
+
+    status, err := r.GetSecurityStatus(userID)
+    if err != nil {
+        return 0, err
+    }
+
+    return status.IPSuspicionCount, nil
+}
+
 func (r *SecurityRepository) LockAccount(userID int64, reason string, lockedBy *int64) error {
     ctx, cancel := contextWithTimeout(defaultTimeout)
     defer cancel()
@@ -211,4 +237,42 @@ func (r *SecurityRepository) IsAccountLocked(userID int64) (bool, error) {
         return false, err
     }
     return status.AccountLocked, nil
+}
+
+func (r *SecurityRepository) GetRecentSuccessfulLogins(userID int64, limit int) ([]*models.UserIPTracking, error) {
+    ctx, cancel := contextWithTimeout(defaultTimeout)
+    defer cancel()
+
+    query := `
+        SELECT tracking_id, user_id, ip_address, login_timestamp, is_successful, user_agent
+        FROM user_ip_tracking
+        WHERE user_id = ? AND is_successful = TRUE
+        ORDER BY login_timestamp DESC
+        LIMIT ?
+    `
+
+    rows, err := r.db.QueryContext(ctx, query, userID, limit)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get recent successful logins: %w", err)
+    }
+    defer rows.Close()
+
+    var history []*models.UserIPTracking
+    for rows.Next() {
+        record := &models.UserIPTracking{}
+        err := rows.Scan(
+            &record.TrackingID,
+            &record.UserID,
+            &record.IPAddress,
+            &record.LoginTimestamp,
+            &record.IsSuccessful,
+            &record.UserAgent,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("failed to scan login record: %w", err)
+        }
+        history = append(history, record)
+    }
+
+    return history, nil
 }
